@@ -1,0 +1,5 @@
+# Do not commit IDE specific settings
+.idea
+
+# Do not commit CMake's debug build
+cmake-build-debug
