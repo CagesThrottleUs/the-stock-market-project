@@ -3,3 +3,6 @@
 
 # Do not commit CMake's debug build
 cmake-build-debug
+cmake-build-minsizerel
+cmake-build-release
+cmake-build-relwithdebinfo
