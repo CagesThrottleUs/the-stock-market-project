@@ -9,3 +9,6 @@ cmake-build-relwithdebinfo
 
 # Do not commit Static Analyzer Local Builds
 .cmake-analysis-build/
+
+# Add Mac's .DS_Store
+.DS_Store
