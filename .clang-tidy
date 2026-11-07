@@ -1,0 +1,138 @@
+# 1. Library / Platform / Language-specific (abseil-, altera-, android-, boost-, mpi-, objc-, openmp-): Only enable these if
+#    your codebase actively uses these specific libraries, hardware targets, or language extensions.
+# 2. Organizational Style Guides (darwin-, fuchsia-, google-, linuxkernel-, llvm-, llvmlibc-): Only enable these if your
+#    project explicitly chooses to follow that specific organization's internal coding conventions.
+
+Checks: >
+  -*,
+  bugprone-*,
+  performance-*,
+  portability-*,
+  clang-analyzer-*,
+  concurrency-*,
+  modernize-*,
+  cppcoreguidelines-*,
+  readability-*,
+  misc-*,
+  google-build-explicit-make-pair,
+  google-readability-avoid-underscore-in-googletest-name,
+  google-readability-todo,
+  google-runtime-float,
+  google-runtime-int,
+  google-runtime-operator,
+  llvm-header-guard,
+  llvm-include-order,
+  llvm-namespace-comment,
+  
+
+HeaderFilterRegex: '.*'
+
+# Add options as following:
+#CheckOptions:
+#  - key:             readability-identifier-naming.ClassCase
+#    value:           CamelCase
+CheckOptions:
+  - key: modernize-deprecated-headers.CheckHeaderFile
+    value: true
+  - key: readability-identifier-length.IgnoredVariableNames
+    value: '^(x|y|z|w|dx|dy|dz|dt|id|in|out|it|_)$'
+  - key: readability-identifier-length.IgnoredParameterNames
+    value: '^[a-z]$'
+
+  # ==========================================
+  # Types & Concepts (CamelCase)
+  # ==========================================
+  - key: readability-identifier-naming.ClassCase
+    value: 'CamelCase'
+  - key: readability-identifier-naming.StructCase
+    value: 'CamelCase'
+  - key: readability-identifier-naming.EnumCase
+    value: 'CamelCase'
+  - key: readability-identifier-naming.UnionCase
+    value: 'CamelCase'
+  - key: readability-identifier-naming.TypeAliasCase
+    value: 'CamelCase'
+  - key: readability-identifier-naming.TypedefCase
+    value: 'CamelCase'
+  - key: readability-identifier-naming.ConceptCase
+    value: 'CamelCase'
+  - key: readability-identifier-naming.TemplateParameterCase
+    value: 'CamelCase'
+
+  # ==========================================
+  # Functions & Methods (lower_case)
+  # ==========================================
+  - key: readability-identifier-naming.FunctionCase
+    value: 'lower_case'
+  - key: readability-identifier-naming.MethodCase
+    value: 'lower_case'
+  - key: readability-identifier-naming.ConstexprFunctionCase
+    value: 'lower_case'
+
+  # ==========================================
+  # Local Variables & Parameters (lower_case)
+  # ==========================================
+  - key: readability-identifier-naming.VariableCase
+    value: 'lower_case'
+  - key: readability-identifier-naming.LocalVariableCase
+    value: 'lower_case'
+  - key: readability-identifier-naming.ParameterCase
+    value: 'lower_case'
+
+  # ==========================================
+  # Class & Struct Members
+  # ==========================================
+  - key: readability-identifier-naming.MemberCase
+    value: 'lower_case'
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: 'lower_case'
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: '_'
+  - key: readability-identifier-naming.ProtectedMemberCase
+    value: 'lower_case'
+  - key: readability-identifier-naming.ProtectedMemberSuffix
+    value: '_'
+  - key: readability-identifier-naming.PublicMemberCase
+    value: 'lower_case'
+
+  # ==========================================
+  # Constants, Enums & Macros (UPPER_CASE)
+  # ==========================================
+  - key: readability-identifier-naming.ConstantCase
+    value: 'UPPER_CASE'
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: 'UPPER_CASE'
+  - key: readability-identifier-naming.StaticConstantCase
+    value: 'UPPER_CASE'
+  - key: readability-identifier-naming.ClassConstantCase
+    value: 'UPPER_CASE'
+  - key: readability-identifier-naming.EnumConstantCase
+    value: 'UPPER_CASE'
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: 'UPPER_CASE'
+
+  # ==========================================
+  # Namespaces
+  # ==========================================
+  - key: readability-identifier-naming.NamespaceCase
+    value: 'lower_case'
+
+  - key: readability-inconsistent-declaration-parameter-name.Strict
+    value: true
+
+  - key: readability-magic-numbers.IgnorePowersOf2IntegerValues
+    value: true
+
+  - key: readability-uniqueptr-delete-release.PreferResetCall
+    value: true
+
+  # ==========================================
+  # Coroutine Safety
+  # ==========================================
+  # Extends default std::lock_guard and std::scoped_lock to include all std locks
+  # Add third-party locks here (e.g. absl::MutexLock, boost::unique_lock) if applicable
+  - key: misc-coroutine-hostile-raii.RAIITypesList
+    value: 'std::lock_guard;std::scoped_lock;std::unique_lock;std::shared_lock;boost::unique_lock;absl::MutexLock'
+
+  - key: google-readability-todo.Style
+    value: Parentheses
