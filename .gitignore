@@ -12,3 +12,6 @@ cmake-build-relwithdebinfo
 
 # Add Mac's .DS_Store
 .DS_Store
+
+# Ignore the market data directory
+data/
