@@ -3,6 +3,18 @@
 This document is the one that would act as a marker for history of the changes that have been introduced to the project.
 The core goal is communication of this project as a lifetime.
 
+## 2026-11-08
+
+The README.md has been updated to current state where we have pointed out what we currently have in the project itself.
+
+Next important task is to get the relevant market data and specifications on what these data are guaranteed to do - on
+whose basis we will have to create the system architecture.
+
+Data is being downloaded from: [EMI Server](https://emi.nasdaq.com/ITCH/Nasdaq%20ITCH/) and I have downloaded two of the
+many - `S112825-v50.txt.gz` for Normal testing and `S061226-v50.txt.gz` for stress testing.
+
+I have also added the document architecture that I am going to use to build more of the project.
+
 ## 2026-11-07
 
 I have completed issue #3 of the project. This issue primarily involved understanding the different tools that a project
