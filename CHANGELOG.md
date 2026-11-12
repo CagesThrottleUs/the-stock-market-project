@@ -3,6 +3,14 @@
 This document is the one that would act as a marker for history of the changes that have been introduced to the project.
 The core goal is communication of this project as a lifetime.
 
+## 2026-11-12
+
+Added a full automation of downloading and decompression of the market data downloaded from the EMI server - which would
+allow me to repeat this later on a new system without worrying about finding and downloading from alternate sources.
+
+Post this automation - I am going to spend time on actually building the architecture and understanding how to build the
+proper solution that passes the functional test.
+
 ## 2026-11-08
 
 The README.md has been updated to current state where we have pointed out what we currently have in the project itself.

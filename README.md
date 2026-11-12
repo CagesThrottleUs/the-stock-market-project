@@ -90,13 +90,15 @@ Run `scripts/pre-push.sh --help` for the environment overrides (`CC`, `CXX`, `CL
 
 ```text
 .
-├── CMakeLists.txt        # Build definition (C++23, macOS SDK sanity checks)
-├── main.cpp              # Entry point (placeholder)
-├── scripts/pre-push.sh   # Local quality gates + git push
-├── .clang-format         # Formatting rules
-├── .clang-tidy           # Lint rules
-├── .clangd               # Language-server flags
-└── CHANGELOG.md          # Project journal
+├── CMakeLists.txt           # Build definition (C++23, macOS SDK sanity checks)
+├── main.cpp                 # Entry point (placeholder)
+├── scripts/pre-push.sh      # Local quality gates + git push
+├── scripts/get_itch_data.py # Download Nasdaq ITCH captures into data/
+├── scripts/decompress.py    # data/**/*.gz -> sibling .bin (Nasdaq ITCH captures)
+├── .clang-format            # Formatting rules
+├── .clang-tidy              # Lint rules
+├── .clangd                  # Language-server flags
+└── CHANGELOG.md             # Project journal
 ```
 
 [Google Benchmark]: https://github.com/google/benchmark

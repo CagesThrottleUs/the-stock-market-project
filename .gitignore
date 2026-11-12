@@ -15,3 +15,6 @@ cmake-build-relwithdebinfo
 
 # Ignore the market data directory
 data/
+
+# Ignore __pycache__ from python execution
+*/__pycache__
