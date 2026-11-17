@@ -3,7 +3,9 @@
   "cmakeMinimumRequired": { "major": 4, "minor": 3, "patch": 0 },
   "$comment": [
     "Shared, machine-independent presets. Never put absolute or machine-specific paths here;",
-    "those belong in your git-ignored CMakeUserPresets.json (see CMakeUserPresets.json.example)."
+    "those belong in your git-ignored CMakeUserPresets.json (see CMakeUserPresets.json.example).",
+    "The clang-tidy and scan-build presets are owned by scripts/pre-push.sh, which deletes and recreates",
+    "their build dirs. They live in .cmake-analysis-build/ so they never collide with IDE build dirs."
   ],
   "configurePresets": [
     {
@@ -38,6 +40,7 @@
       "name": "clang-tidy",
       "displayName": "clang-tidy analysis",
       "description": "Compilation database for clang-tidy (used by scripts/pre-push.sh).",
+      "binaryDir": "${sourceDir}/.cmake-analysis-build/${presetName}",
       "$comment": "Build before linting: with Ninja, CMake scans for C++ modules and the compile commands reference @<obj>.modmap files that only exist after a build.",
       "inherits": "debug"
     },
@@ -45,6 +48,7 @@
       "name": "scan-build",
       "displayName": "Clang Static Analyzer",
       "description": "Run under scan-build (used by scripts/pre-push.sh).",
+      "binaryDir": "${sourceDir}/.cmake-analysis-build/${presetName}",
       "$comment": [
         "Must NOT set CMAKE_C_COMPILER/CMAKE_CXX_COMPILER, directly or via inherits.",
         "scan-build injects its interceptors through CC/CXX; an explicit compiler bypasses them",

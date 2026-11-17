@@ -61,8 +61,9 @@ CODESCENE="${CODESCENE:-cs}"
 export CS_DISABLE_VERSION_CHECK="${CS_DISABLE_VERSION_CHECK:-1}"
 
 # Must match the binaryDir of the clang-tidy / scan-build presets in CMakePresets.json.
-SCAN_BUILD_DIR="build/scan-build"
-TIDY_BUILD_DIR="build/clang-tidy"
+# Kept out of build/ so deleting them never touches a directory an IDE (e.g. a CLion preset profile) uses.
+SCAN_BUILD_DIR=".cmake-analysis-build/scan-build"
+TIDY_BUILD_DIR=".cmake-analysis-build/clang-tidy"
 
 ##############################
 #### Required tools check ####
