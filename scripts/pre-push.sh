@@ -56,6 +56,8 @@ cd "$REPO_ROOT" || exit 1
 # Must match the binaryDir of the clang-tidy / scan-build presets in CMakePresets.json.
 # Kept out of build/ so deleting them never touches a directory an IDE (e.g. a CLion preset profile) uses.
 ANALYSIS_DIR=".cmake-analysis-build"
+# The clang-tidy / scan-build presets are disabled unless this is set, which keeps them out of IDEs.
+export PRE_PUSH_ANALYSIS=1
 SCAN_BUILD_DIR="$ANALYSIS_DIR/scan-build"
 TIDY_BUILD_DIR="$ANALYSIS_DIR/clang-tidy"
 

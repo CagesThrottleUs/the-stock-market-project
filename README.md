@@ -56,7 +56,8 @@ warmup**.
 ### Build and run
 
 Builds are driven by [CMake presets][cmake-presets] in `CMakePresets.json`. Each preset builds into `build/<preset>`,
-except the two analysis presets, which `scripts/pre-push.sh` owns and recreates in `.cmake-analysis-build/<preset>`:
+except the two analysis presets. `scripts/pre-push.sh` owns those and recreates them in `.cmake-analysis-build/<preset>`.
+They are only enabled when `PRE_PUSH_ANALYSIS=1` is set (pre-push sets it), so IDEs don't list them:
 
 ```bash
 cmake --preset release
