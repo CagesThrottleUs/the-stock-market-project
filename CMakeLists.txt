@@ -30,5 +30,19 @@ endif ()
 project(the_stock_market_project)
 
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# -std=c++23 rather than -std=gnu++23
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Project warning policy. Link it into every first-party target; third-party code must not inherit it.
+# -Weverything is Clang-only; GCC gets the closest common set.
+add_library(the_stock_market_project_warnings INTERFACE)
+target_compile_options(the_stock_market_project_warnings INTERFACE
+        $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-switch-default>
+        $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>
+)
 
 add_executable(the_stock_market_project main.cpp)
+target_link_libraries(the_stock_market_project PRIVATE the_stock_market_project_warnings)
+# Adds -Werror; override locally with `cmake --compile-no-warning-as-error`.
+set_target_properties(the_stock_market_project PROPERTIES COMPILE_WARNING_AS_ERROR ON)

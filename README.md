@@ -102,11 +102,17 @@ The repository ships strict, opinionated tooling configuration:
 
 | Tool                                   | Config                | Purpose                                                      |
 | -------------------------------------- | --------------------- | ------------------------------------------------------------ |
+| Compiler warnings                      | `CMakeLists.txt`      | `-Weverything` (Clang) as errors, `-std=c++23`               |
 | [clang-format]                         | `.clang-format`       | Consistent formatting                                        |
 | [clang-tidy]                           | `.clang-tidy`         | Lints (bugprone, performance, modernize, Core Guidelines, …) |
-| [clangd]                               | `.clangd`             | IDE diagnostics with `-Weverything -Werror`                  |
+| [clangd]                               | `.clangd`             | IDE diagnostics, using the build's flags                     |
 | [Clang Static Analyzer] (`scan-build`) | `scripts/pre-push.sh` | Path-sensitive bug finding                                   |
 | [CodeScene] (`cs delta`)               | n/a                   | Code Health regression check against the base branch         |
+
+The warning policy lives in `CMakeLists.txt`, so the build, clang-tidy, scan-build and clangd all see the same flags.
+Every warning fails the build. To build anyway while experimenting, configure with
+`cmake --preset <name> --compile-no-warning-as-error`. `-Weverything` also enables new diagnostics on every Clang
+upgrade, so a compiler bump may need code fixes or an explicit `-Wno-…` in `CMakeLists.txt`.
 
 `scripts/pre-push.sh` runs every gate and then calls `git push`. It isn't installed as a git hook, so run it directly or
 through an alias:
@@ -129,7 +135,7 @@ Run `scripts/pre-push.sh --help` for all overrides (`CC`, `CXX`, `CLANG_FORMAT`,
 
 ```text
 .
-├── CMakeLists.txt           # Build definition (C++23, macOS SDK sanity checks)
+├── CMakeLists.txt           # Build definition (C++23, warning policy, macOS SDK sanity checks)
 ├── CMakePresets.json        # Shared build presets (Ninja, build/<preset>)
 ├── CMakeUserPresets.json.example # Template for your git-ignored CMakeUserPresets.json
 ├── main.cpp                 # Entry point (placeholder)

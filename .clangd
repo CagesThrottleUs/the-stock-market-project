@@ -2,17 +2,7 @@ CompileFlags:
   # Written by `cmake --preset debug` (CMakePresets.json). Build it once so the C++ module
   # scanning .modmap files it references exist.
   CompilationDatabase: build/debug
+  # The language standard and warning policy come from CMakeLists.txt via the compilation database.
+  # Only editor-specific flags belong here.
   Add:
-    - -std=c++23
     - -ferror-limit=0
-    # Warnings: enable all, treat as errors (including deprecated)
-    - -Wall
-    - -Werror
-    - -Weverything
-    - -Werror=deprecated
-    - -Wpedantic
-    # C++23 project: ignore C++98 compatibility (included in -Weverything)
-    - -Wno-c++98-compat
-    - -Wno-c++98-compat-pedantic
-    - -Wno-switch-default
-    
