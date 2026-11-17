@@ -22,7 +22,7 @@ Options:
 Any other argument is forwarded verbatim to 'git push'.
 
 Environment overrides:
-  CC, CXX                 Compilers for scan-build (default: Homebrew LLVM)
+  CC, CXX                 Compilers for clang-tidy and scan-build (default: Homebrew LLVM)
   CLANG_FORMAT, CLANG_TIDY Tool binaries (default: next to \$CC, else from PATH)
   CS_DELTA_BASE           Git ref CodeScene compares against (default: merge-base with origin's default branch)
 USAGE
@@ -60,16 +60,16 @@ CLANG_TIDY="${CLANG_TIDY:-$(default_llvm_tool clang-tidy)}"
 CODESCENE="${CODESCENE:-cs}"
 export CS_DISABLE_VERSION_CHECK="${CS_DISABLE_VERSION_CHECK:-1}"
 
-ANALYSIS_DIR=".cmake-analysis-build"
-SCAN_BUILD_DIR="$ANALYSIS_DIR/scan-build"
-TIDY_BUILD_DIR="$ANALYSIS_DIR/clang-tidy"
+# Must match the binaryDir of the clang-tidy / scan-build presets in CMakePresets.json.
+SCAN_BUILD_DIR="build/scan-build"
+TIDY_BUILD_DIR="build/clang-tidy"
 
 ##############################
 #### Required tools check ####
 ##############################
 
 missing=()
-for tool in "$CC" "$CXX" cmake scan-build "$CLANG_FORMAT" "$CLANG_TIDY" "$CODESCENE"; do
+for tool in "$CC" "$CXX" cmake ninja scan-build "$CLANG_FORMAT" "$CLANG_TIDY" "$CODESCENE"; do
   command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
 done
 if [ ${#missing[@]} -gt 0 ]; then
@@ -115,10 +115,15 @@ run_clang_tidy() {
   if [ ${#tidy_sources[@]} -eq 0 ]; then echo "   No translation units tracked; skipping."; return 0; fi
 
   rm -rf "$TIDY_BUILD_DIR"
-  if ! cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" \
-    -S . -B "$TIDY_BUILD_DIR" >/dev/null; then
+  if ! cmake --preset clang-tidy \
+    -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" >/dev/null; then
     echo "❌ CMake configure for clang-tidy failed."
+    return 1
+  fi
+  # Ninja enables C++ module scanning, so compile commands reference @<obj>.modmap files that only
+  # exist after a build. clang-tidy fails with "no such file or directory" without this step.
+  if ! cmake --build --preset clang-tidy >/dev/null; then
+    echo "❌ Build for clang-tidy failed."
     return 1
   fi
   if ! "$CLANG_TIDY" -p "$TIDY_BUILD_DIR" --quiet --warnings-as-errors='*' "${tidy_sources[@]}"; then
@@ -137,14 +142,14 @@ run_scan_build() {
   echo "   CC  -> $CC"
   echo "   CXX -> $CXX"
 
-  # Dedicated analysis build directory to avoid messing up the IDE's cmake-build-debug
+  # Never pass -DCMAKE_<LANG>_COMPILER here: scan-build selects the compiler through CC/CXX,
+  # and an explicit compiler bypasses its interceptors so nothing gets analysed.
   rm -rf "$SCAN_BUILD_DIR"
-  mkdir -p "$SCAN_BUILD_DIR"
 
   if ! scan-build \
     --use-cc="$CC" \
     --use-c++="$CXX" \
-    cmake -DCMAKE_BUILD_TYPE=Debug -S . -B "$SCAN_BUILD_DIR"; then
+    cmake --preset scan-build; then
     echo "❌ CMake configure for scan-build failed."
     return 1
   fi
@@ -168,7 +173,7 @@ run_scan_build() {
     -enable-checker security.FloatLoopCounter \
     --status-bugs \
     -o "$SCAN_BUILD_DIR/reports" \
-    cmake --build "$SCAN_BUILD_DIR"; then
+    cmake --build --preset scan-build; then
 
     echo "❌ Clang Static Analyzer found bugs."
     local report_path
