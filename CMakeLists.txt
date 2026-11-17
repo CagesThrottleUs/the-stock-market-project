@@ -31,8 +31,4 @@ project(the_stock_market_project)
 
 set(CMAKE_CXX_STANDARD 23)
 
-# TODO: Remove this in favour of Independent Toolchain as used by users
-set(CMAKE_C_COMPILER /opt/homebrew/opt/llvm/bin/clang)
-set(CMAKE_CXX_COMPILER /opt/homebrew/opt/llvm/bin/clang++)
-
 add_executable(the_stock_market_project main.cpp)
