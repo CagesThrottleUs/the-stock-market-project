@@ -117,10 +117,13 @@ git config alias.checked-push '!scripts/pre-push.sh'
 git checked-push                 # run all gates, push only if they pass
 git checked-push --no-push       # run the gates without pushing
 git checked-push --push-on-fail  # push even if a gate fails
+git checked-push --preset llvm-debug  # use the compilers of one of your presets
 ```
 
-Run `scripts/pre-push.sh --help` for the environment overrides (`CC`, `CXX`, `CLANG_FORMAT`, `CLANG_TIDY`,
-`CS_DELTA_BASE`).
+The gates build with the compilers CMake resolves for a configure preset: `debug` (CMake's default compiler) unless you
+pass `--preset <name>` or set `PRE_PUSH_PRESET`, usually to one of your user presets. `CC`/`CXX` in the environment
+override the preset. clang-tidy and clang-format are taken from the same LLVM install as the compiler when available.
+Run `scripts/pre-push.sh --help` for all overrides (`CC`, `CXX`, `CLANG_FORMAT`, `CLANG_TIDY`, `CS_DELTA_BASE`).
 
 ## Project layout
 

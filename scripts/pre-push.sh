@@ -3,7 +3,7 @@
 # Runs local quality gates and then forwards remaining arguments to `git push`.
 # This is intentionally NOT installed as a git hook; invoke it directly or via an alias:
 #   git config alias.checked-push '!scripts/pre-push.sh'
-#   git checked-push [--push-on-fail] [--no-push] [--] [git push args...]
+#   git checked-push [--preset NAME] [--push-on-fail] [--no-push] [--] [git push args...]
 #
 # Gates: clang-format, clang-tidy, Clang Static Analyzer (scan-build), CodeScene (cs delta).
 # A missing CLI always aborts (exit 127), even with --push-on-fail.
@@ -15,6 +15,8 @@ usage() {
 Usage: scripts/pre-push.sh [options] [--] [git push args...]
 
 Options:
+  --preset NAME    Configure preset whose compilers the checks use, typically one from your
+                   CMakeUserPresets.json (env: PRE_PUSH_PRESET; default: debug, i.e. CMake's default compiler).
   --push-on-fail   Push even if a check fails (env: PUSH_ON_FAIL=1). Missing tools still abort.
   --no-push        Run checks only; do not invoke git push.
   -h, --help       Show this help.
@@ -22,13 +24,14 @@ Options:
 Any other argument is forwarded verbatim to 'git push'.
 
 Environment overrides:
-  CC, CXX                 Compilers for clang-tidy and scan-build (default: Homebrew LLVM)
+  CC, CXX                 Compilers for clang-tidy and scan-build (override the preset's compilers)
   CLANG_FORMAT, CLANG_TIDY Tool binaries (default: next to \$CC, else from PATH)
   CS_DELTA_BASE           Git ref CodeScene compares against (default: merge-base with origin's default branch)
 USAGE
 }
 
 PUSH_ON_FAIL="${PUSH_ON_FAIL:-0}"
+PRESET="${PRE_PUSH_PRESET:-debug}"
 DO_PUSH=1
 GIT_PUSH_ARGS=()
 
@@ -36,6 +39,10 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --push-on-fail) PUSH_ON_FAIL=1 ;;
     --no-push) DO_PUSH=0 ;;
+    --preset)
+      if [ $# -lt 2 ]; then echo "❌ --preset needs a preset name." >&2; exit 2; fi
+      PRESET="$2"; shift ;;
+    --preset=*) PRESET="${1#--preset=}" ;;
     -h | --help) usage; exit 0 ;;
     --) shift; GIT_PUSH_ARGS+=("$@"); break ;;
     *) GIT_PUSH_ARGS+=("$1") ;;
@@ -46,9 +53,34 @@ done
 REPO_ROOT="$(git rev-parse --show-toplevel)" || exit 1
 cd "$REPO_ROOT" || exit 1
 
-# Parameterize compilers (uses CC/CXX env vars if set, otherwise falls back to Homebrew LLVM paths)
-CC="${CC:-/opt/homebrew/opt/llvm/bin/clang}"
-CXX="${CXX:-/opt/homebrew/opt/llvm/bin/clang++}"
+# Must match the binaryDir of the clang-tidy / scan-build presets in CMakePresets.json.
+# Kept out of build/ so deleting them never touches a directory an IDE (e.g. a CLion preset profile) uses.
+ANALYSIS_DIR=".cmake-analysis-build"
+SCAN_BUILD_DIR="$ANALYSIS_DIR/scan-build"
+TIDY_BUILD_DIR="$ANALYSIS_DIR/clang-tidy"
+
+# Compilers: CC/CXX from the environment win; otherwise use the compilers CMake resolves for $PRESET.
+# The preset is configured into a scratch directory and the result read back from its cache, so
+# inherits, macros and toolchain files resolve exactly as in a normal build (no JSON parsing here).
+read_cache_var() { sed -n "s/^$1:[A-Z]*=//p" "$2"; }
+COMPILER_SOURCE="CC/CXX environment"
+if [ -z "${CC:-}" ] || [ -z "${CXX:-}" ]; then
+  COMPILER_SOURCE="preset '$PRESET' (CC/CXX environment overrides)"
+  if ! command -v cmake >/dev/null 2>&1; then
+    echo "❌ cmake is not installed or not on PATH (cannot be bypassed with --push-on-fail)."
+    exit 127
+  fi
+  PROBE_DIR="$ANALYSIS_DIR/preset-probe"
+  rm -rf "$PROBE_DIR"
+  if ! cmake --preset "$PRESET" -B "$PROBE_DIR" >/dev/null; then
+    echo "❌ Could not configure preset '$PRESET' to find its compilers. List presets: cmake --list-presets"
+    exit 2
+  fi
+  CC="${CC:-$(read_cache_var CMAKE_C_COMPILER "$PROBE_DIR/CMakeCache.txt")}"
+  CXX="${CXX:-$(read_cache_var CMAKE_CXX_COMPILER "$PROBE_DIR/CMakeCache.txt")}"
+  rm -rf "$PROBE_DIR"
+fi
+echo "🔧 Compilers from $COMPILER_SOURCE: CC=$CC CXX=$CXX"
 
 # Prefer tools from the same LLVM install as the compiler to avoid version skew.
 LLVM_BIN_DIR="$(dirname "$CC")"
@@ -59,11 +91,6 @@ CLANG_FORMAT="${CLANG_FORMAT:-$(default_llvm_tool clang-format)}"
 CLANG_TIDY="${CLANG_TIDY:-$(default_llvm_tool clang-tidy)}"
 CODESCENE="${CODESCENE:-cs}"
 export CS_DISABLE_VERSION_CHECK="${CS_DISABLE_VERSION_CHECK:-1}"
-
-# Must match the binaryDir of the clang-tidy / scan-build presets in CMakePresets.json.
-# Kept out of build/ so deleting them never touches a directory an IDE (e.g. a CLion preset profile) uses.
-SCAN_BUILD_DIR=".cmake-analysis-build/scan-build"
-TIDY_BUILD_DIR=".cmake-analysis-build/clang-tidy"
 
 ##############################
 #### Required tools check ####
