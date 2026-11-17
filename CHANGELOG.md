@@ -12,8 +12,12 @@ choices, such as which compiler to use, live in a git-ignored `CMakeUserPresets.
 
 The hardcoded Homebrew compiler paths are gone from `CMakeLists.txt`. Setting them after `project()` had quietly
 disabled the scan-build gate: it reported "No bugs found" even with a planted null dereference. The gate catches it
-again, and `scripts/pre-push.sh` now uses the same presets as everyone else. clangd reads `build/debug`'s compilation
-database instead of guessing flags.
+again. `scripts/pre-push.sh` now uses the same presets as everyone else and takes its compilers from a preset
+(`--preset` / `PRE_PUSH_PRESET`) instead of hardcoded paths.
+
+The warning policy (`-Weverything` as errors, `-std=c++23`) moved from `.clangd` into `CMakeLists.txt`. Until now
+only the editor enforced it; the build, clang-tidy and scan-build never saw it. clangd picks the flags up from the
+compilation database of whichever preset you point it at.
 
 ## 2026-11-12
 

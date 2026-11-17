@@ -98,9 +98,9 @@ scratch with `cmake --preset <name> --fresh`.
 
 ### Editor setup (clangd)
 
-clangd takes the language standard and warnings from your preset's `compile_commands.json`. It only looks next to
-the sources and in a top-level `build/` directory, so it won't find `build/<preset>/` by itself and falls back to generic
-flags. Configure and build your preset once, then point clangd at it, either with a git-ignored symlink (works for any
+clangd takes the language standard and warnings from your preset's `compile_commands.json`. It only searches each
+directory above a source file and that directory's `build/` subdirectory, so it won't find `build/<preset>/` by itself
+and falls back to generic flags. Configure and build your preset once, then point clangd at it, either with a git-ignored symlink (works for any
 editor)
 
 ```bash
