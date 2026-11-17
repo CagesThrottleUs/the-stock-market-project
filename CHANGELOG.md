@@ -3,6 +3,18 @@
 This document is the one that would act as a marker for history of the changes that have been introduced to the project.
 The core goal is communication of this project as a lifetime.
 
+## 2026-11-17
+
+Builds now go through CMake presets (#20). `CMakePresets.json` holds the shared Ninja presets (`debug`, `release`,
+`relwithdebinfo`, `clang-tidy`, `scan-build` and a `ci` workflow) that build into `build/<preset>`. Machine-specific
+choices, such as which compiler to use, live in a git-ignored `CMakeUserPresets.json` started from
+`CMakeUserPresets.json.example`.
+
+The hardcoded Homebrew compiler paths are gone from `CMakeLists.txt`. Setting them after `project()` had quietly
+disabled the scan-build gate: it reported "No bugs found" even with a planted null dereference. The gate catches it
+again, and `scripts/pre-push.sh` now uses the same presets as everyone else. clangd reads `build/debug`'s compilation
+database instead of guessing flags.
+
 ## 2026-11-12
 
 Added a full automation of downloading and decompression of the market data downloaded from the EMI server - which would

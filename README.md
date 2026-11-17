@@ -47,18 +47,53 @@ warmup**.
 ### Prerequisites
 
 - CMake **≥ 4.3**
-- LLVM/Clang with C++23 support. `CMakeLists.txt` currently pins Homebrew LLVM at `/opt/homebrew/opt/llvm`
-  (`brew install llvm`).
+- [Ninja] (`brew install ninja`). Every preset uses it, because the Makefile generators don't support C++ modules.
+- A C++23 compiler. The repository doesn't pin one: CMake picks the system default (AppleClang on macOS) unless you
+  choose another one in a user preset (see below). The tooling is tested with Homebrew LLVM (`brew install llvm`).
 - macOS: a working Xcode Command Line Tools install. The CMake configure step fails early with a fix-it hint if
   `xcode-select -p` or the SDK path is broken.
 
 ### Build and run
 
+Builds are driven by [CMake presets][cmake-presets] in `CMakePresets.json`. Each preset builds into `build/<preset>`:
+
 ```bash
-cmake -S . -B cmake-build-release -DCMAKE_BUILD_TYPE=Release
-cmake --build cmake-build-release
-./cmake-build-release/the_stock_market_project
+cmake --preset release
+cmake --build --preset release
+./build/release/the_stock_market_project
 ```
+
+| Preset           | Purpose                                                                |
+| ---------------- | ---------------------------------------------------------------------- |
+| `debug`          | Day-to-day development. clangd reads its `compile_commands.json`       |
+| `release`        | Optimized build                                                        |
+| `relwithdebinfo` | Optimized build with debug info (profiling)                            |
+| `clang-tidy`     | Compilation database for clang-tidy (used by `scripts/pre-push.sh`)    |
+| `scan-build`     | Clang Static Analyzer build (used by `scripts/pre-push.sh`)            |
+
+`cmake --workflow --preset ci` configures and builds `debug` in one command. List everything with
+`cmake --list-presets=all`.
+
+### Choosing your compiler (user presets)
+
+Machine-specific settings go in a git-ignored `CMakeUserPresets.json` that inherits the shared presets, never in a
+tracked file. Start from the template:
+
+```bash
+cp CMakeUserPresets.json.example CMakeUserPresets.json   # edit paths for your machine
+cmake --preset llvm-debug
+cmake --build --preset llvm-debug
+```
+
+The template shows how to set the compiler, a compiler launcher (ccache) and a custom build directory. CLion and the
+VS Code CMake Tools extension pick up both files automatically.
+
+A build directory remembers the compiler it was first configured with. After changing compilers, reconfigure from
+scratch with `cmake --preset <name> --fresh`.
+
+> Don't set `CMAKE_C_COMPILER`/`CMAKE_CXX_COMPILER` on the `scan-build` preset or anything it inherits. scan-build
+> selects the compiler through `CC`/`CXX`, and an explicit compiler bypasses it, so the analyzer silently checks
+> nothing.
 
 ## Code quality
 
@@ -91,6 +126,8 @@ Run `scripts/pre-push.sh --help` for the environment overrides (`CC`, `CXX`, `CL
 ```text
 .
 ├── CMakeLists.txt           # Build definition (C++23, macOS SDK sanity checks)
+├── CMakePresets.json        # Shared build presets (Ninja, build/<preset>)
+├── CMakeUserPresets.json.example # Template for your git-ignored CMakeUserPresets.json
 ├── main.cpp                 # Entry point (placeholder)
 ├── scripts/pre-push.sh      # Local quality gates + git push
 ├── scripts/get_itch_data.py # Download Nasdaq ITCH captures into data/
@@ -102,6 +139,8 @@ Run `scripts/pre-push.sh --help` for the environment overrides (`CC`, `CXX`, `CL
 ```
 
 [Google Benchmark]: https://github.com/google/benchmark
+[Ninja]: https://ninja-build.org/
+[cmake-presets]: https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html
 [nanobench]: https://github.com/martinus/nanobench
 [Valgrind]: https://valgrind.org/
 [clang-format]: https://clang.llvm.org/docs/ClangFormat.html
