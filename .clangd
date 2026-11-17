@@ -1,4 +1,7 @@
 CompileFlags:
+  # Written by `cmake --preset debug` (CMakePresets.json). Build it once so the C++ module
+  # scanning .modmap files it references exist.
+  CompilationDatabase: build/debug
   Add:
     - -std=c++23
     - -ferror-limit=0
