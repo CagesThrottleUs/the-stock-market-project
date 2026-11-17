@@ -7,6 +7,12 @@ cmake-build-minsizerel
 cmake-build-release
 cmake-build-relwithdebinfo
 
+# Do not commit CMake preset build directories (CMakePresets.json binaryDir)
+build/
+
+# Per-developer CMake presets (template: CMakeUserPresets.json.example)
+CMakeUserPresets.json
+
 # Do not commit Static Analyzer Local Builds
 .cmake-analysis-build/
 

@@ -1,0 +1,37 @@
+{
+  "version": 10,
+  "$comment": [
+    "Copy to CMakeUserPresets.json (git-ignored) and adjust to your machine.",
+    "CMake loads CMakePresets.json automatically, so these presets can inherit the shared ones.",
+    "Changing the compiler of an existing build directory needs a fresh configure: cmake --preset <name> --fresh"
+  ],
+  "configurePresets": [
+    {
+      "name": "llvm-debug",
+      "displayName": "Debug (Homebrew LLVM)",
+      "inherits": "debug",
+      "$comment": "The launcher lines need ccache installed; remove them otherwise.",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
+        "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
+        "CMAKE_C_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_CXX_COMPILER_LAUNCHER": "ccache"
+      }
+    },
+    {
+      "name": "llvm-release",
+      "displayName": "Release (Homebrew LLVM)",
+      "inherits": "release",
+      "$comment": "Example of building outside the source tree, e.g. on a faster disk.",
+      "binaryDir": "$env{HOME}/.cache/the-stock-market-project/${presetName}",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
+        "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "llvm-debug", "configurePreset": "llvm-debug" },
+    { "name": "llvm-release", "configurePreset": "llvm-release" }
+  ]
+}
