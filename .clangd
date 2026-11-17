@@ -1,8 +1,5 @@
 CompileFlags:
-  # Written by `cmake --preset debug` (CMakePresets.json). Build it once so the C++ module
-  # scanning .modmap files it references exist.
-  CompilationDatabase: build/debug
   # The language standard and warning policy come from CMakeLists.txt via the compilation database.
-  # Only editor-specific flags belong here.
+  # Only editor-specific flags belong here. Point clangd at your preset's database: see README.
   Add:
     - -ferror-limit=0

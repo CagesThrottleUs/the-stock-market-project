@@ -13,6 +13,9 @@ build/
 # Per-developer CMake presets (template: CMakeUserPresets.json.example)
 CMakeUserPresets.json
 
+# Optional per-developer symlink to your preset's compilation database (for clangd)
+/compile_commands.json
+
 # Do not commit Static Analyzer Local Builds
 .cmake-analysis-build/
 

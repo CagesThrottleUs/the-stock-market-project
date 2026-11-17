@@ -66,7 +66,7 @@ cmake --build --preset release
 
 | Preset           | Purpose                                                                |
 | ---------------- | ---------------------------------------------------------------------- |
-| `debug`          | Day-to-day development. clangd reads its `compile_commands.json`       |
+| `debug`          | Day-to-day development                                                 |
 | `release`        | Optimized build                                                        |
 | `relwithdebinfo` | Optimized build with debug info (profiling)                            |
 | `clang-tidy`     | Compilation database for clang-tidy (used by `scripts/pre-push.sh`)    |
@@ -95,6 +95,21 @@ scratch with `cmake --preset <name> --fresh`.
 > Don't set `CMAKE_C_COMPILER`/`CMAKE_CXX_COMPILER` on the `scan-build` preset or anything it inherits. scan-build
 > selects the compiler through `CC`/`CXX`, and an explicit compiler bypasses it, so the analyzer silently checks
 > nothing.
+
+### Editor setup (clangd)
+
+clangd takes the language standard and warnings from your preset's `compile_commands.json`. It only looks next to
+the sources and in a top-level `build/` directory, so it won't find `build/<preset>/` by itself and falls back to generic
+flags. Configure and build your preset once, then point clangd at it, either with a git-ignored symlink (works for any
+editor)
+
+```bash
+ln -s build/llvm-debug/compile_commands.json compile_commands.json
+```
+
+or by passing `--compile-commands-dir=build/llvm-debug` in your editor's clangd arguments (for VS Code, `clangd.arguments`
+in your user settings). The choice of preset is yours, so it is not in the tracked `.clangd`. CLion doesn't need this:
+it gets the flags from its own CMake profile.
 
 ## Code quality
 
