@@ -5,6 +5,11 @@ The core goal is communication of this project as a lifetime.
 
 ## 2026-11-25
 
+Added Nasdaq's network protocol specifications to `docs/`: MoldUDP64 (`network-moldudp64.pdf`), the UDP transport that
+carries ITCH messages; SoupBinTCP (`network-soupbintcp.pdf`), its TCP counterpart; and the ITCH compression notes
+(`network-itchcompression.pdf`). The `.bin` captures frame messages the same way a MoldUDP64 packet does: a 2-byte
+big-endian length before every message, with no delimiter between messages.
+
 Where LLVM lives on a machine now comes from the user preset's `CMAKE_PREFIX_PATH`, not from shell exports (#9).
 Homebrew's llvm caveats suggest exporting `LDFLAGS`, `CPPFLAGS` and `CMAKE_PREFIX_PATH`. CMake copied the `LDFLAGS` into
 each build directory's cache on its first configure, ignored `CPPFLAGS` altogether, and the project needed none of them.
@@ -13,7 +18,12 @@ The first configure now warns when shell flags are about to be stored in the cac
 `CMakeLists.txt` finds `clang-format`, `clang-tidy` and `scan-build` with `find_program`. It searches
 `CMAKE_PREFIX_PATH` first, then the compiler's directory, then `PATH`. `scripts/pre-push.sh` uses whatever CMake found
 for the chosen preset. Before this, scan-build always came from `PATH` and could be a different LLVM version from the
-compiler.
+compiler. The scan-build gate also failed whenever LLVM's `bin/` wasn't on `PATH`. Under scan-build the compiler is
+`libexec/c++-analyzer`, and CMake looks for `clang-scan-deps` only next to the compiler and on `PATH`. `pre-push.sh` now
+passes it the `clang-scan-deps` found next to the real compiler.
+
+While verifying this I found that scan-build silently skips one of the checkers we enable (#27). Planted bugs are still
+caught, so the gate isn't blind, but that checker never runs.
 
 Found along the way for #11: Homebrew clang can't locate its own `libc++.modules.json`, so `import std` will need
 `CMAKE_CXX_STDLIB_MODULES_JSON`.
