@@ -25,7 +25,9 @@ Any other argument is forwarded verbatim to 'git push'.
 
 Environment overrides:
   CC, CXX                 Compilers for clang-tidy and scan-build (override the preset's compilers)
-  CLANG_FORMAT, CLANG_TIDY Tool binaries (default: next to \$CC, else from PATH)
+  CLANG_FORMAT, CLANG_TIDY, SCAN_BUILD
+                          Tool binaries (default: what CMake found for the preset, searching
+                          CMAKE_PREFIX_PATH, then the compiler's directory, then PATH)
   CS_DELTA_BASE           Git ref CodeScene compares against (default: merge-base with origin's default branch)
 USAGE
 }
@@ -61,36 +63,43 @@ export PRE_PUSH_ANALYSIS=1
 SCAN_BUILD_DIR="$ANALYSIS_DIR/scan-build"
 TIDY_BUILD_DIR="$ANALYSIS_DIR/clang-tidy"
 
-# Compilers: CC/CXX from the environment win; otherwise use the compilers CMake resolves for $PRESET.
-# The preset is configured into a scratch directory and the result read back from its cache, so
-# inherits, macros and toolchain files resolve exactly as in a normal build (no JSON parsing here).
-read_cache_var() { sed -n "s/^$1:[A-Z]*=//p" "$2"; }
-COMPILER_SOURCE="CC/CXX environment"
-if [ -z "${CC:-}" ] || [ -z "${CXX:-}" ]; then
-  COMPILER_SOURCE="preset '$PRESET' (CC/CXX environment overrides)"
-  if ! command -v cmake >/dev/null 2>&1; then
-    echo "❌ cmake is not installed or not on PATH (cannot be bypassed with --push-on-fail)."
-    exit 127
-  fi
-  PROBE_DIR="$ANALYSIS_DIR/preset-probe"
-  rm -rf "$PROBE_DIR"
-  if ! cmake --preset "$PRESET" -B "$PROBE_DIR" >/dev/null; then
-    echo "❌ Could not configure preset '$PRESET' to find its compilers. List presets: cmake --list-presets"
-    exit 2
-  fi
-  CC="${CC:-$(read_cache_var CMAKE_C_COMPILER "$PROBE_DIR/CMakeCache.txt")}"
-  CXX="${CXX:-$(read_cache_var CMAKE_CXX_COMPILER "$PROBE_DIR/CMakeCache.txt")}"
-  rm -rf "$PROBE_DIR"
+# Compilers and clang tools: values from the environment win; otherwise use what CMake resolves for $PRESET.
+# The preset is configured into a scratch directory and the result read back from its cache, so inherits,
+# macros, CMAKE_PREFIX_PATH and toolchain files resolve exactly as in a normal build (no JSON parsing here).
+# CMakeLists.txt finds the clang tools via CMAKE_PREFIX_PATH, then the compiler's directory, then PATH.
+if ! command -v cmake >/dev/null 2>&1; then
+  echo "❌ cmake is not installed or not on PATH (cannot be bypassed with --push-on-fail)."
+  exit 127
 fi
-echo "🔧 Compilers from $COMPILER_SOURCE: CC=$CC CXX=$CXX"
+PROBE_DIR="$ANALYSIS_DIR/preset-probe"
+rm -rf "$PROBE_DIR"
+if ! cmake --preset "$PRESET" -B "$PROBE_DIR" >/dev/null; then
+  echo "❌ Could not configure preset '$PRESET' to find its tools. List presets: cmake --list-presets"
+  exit 2
+fi
+# Prints nothing for a missing entry or a find_program miss (<VAR>-NOTFOUND).
+probe_cache_var() { sed -n "s/^$1:[A-Z]*=//p" "$PROBE_DIR/CMakeCache.txt" | sed '/-NOTFOUND$/d'; }
+CC="${CC:-$(probe_cache_var CMAKE_C_COMPILER)}"
+CXX="${CXX:-$(probe_cache_var CMAKE_CXX_COMPILER)}"
+# A tool CMake didn't find falls back to its bare name, so the required-tools check below names it.
+CLANG_FORMAT="${CLANG_FORMAT:-$(probe_cache_var CLANG_FORMAT_EXECUTABLE)}"
+CLANG_FORMAT="${CLANG_FORMAT:-clang-format}"
+CLANG_TIDY="${CLANG_TIDY:-$(probe_cache_var CLANG_TIDY_EXECUTABLE)}"
+CLANG_TIDY="${CLANG_TIDY:-clang-tidy}"
+SCAN_BUILD="${SCAN_BUILD:-$(probe_cache_var SCAN_BUILD_EXECUTABLE)}"
+SCAN_BUILD="${SCAN_BUILD:-scan-build}"
+# Under scan-build the compiler is libexec/c++-analyzer, and CMake looks for clang-scan-deps (C++ module scanning)
+# only next to the compiler and on PATH (not CMAKE_PREFIX_PATH). Hand it the one found next to the real compiler.
+SCAN_BUILD_CMAKE_ARGS=()
+CLANG_SCAN_DEPS="$(probe_cache_var CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS)"
+if [ -n "$CLANG_SCAN_DEPS" ]; then
+  SCAN_BUILD_CMAKE_ARGS+=("-DCMAKE_CXX_COMPILER_CLANG_SCAN_DEPS=$CLANG_SCAN_DEPS")
+fi
+rm -rf "$PROBE_DIR"
+echo "🔧 Tools from preset '$PRESET' (environment overrides):"
+echo "   CC=$CC CXX=$CXX"
+echo "   clang-format=$CLANG_FORMAT clang-tidy=$CLANG_TIDY scan-build=$SCAN_BUILD"
 
-# Prefer tools from the same LLVM install as the compiler to avoid version skew.
-LLVM_BIN_DIR="$(dirname "$CC")"
-default_llvm_tool() {
-  if [ -x "$LLVM_BIN_DIR/$1" ]; then echo "$LLVM_BIN_DIR/$1"; else echo "$1"; fi
-}
-CLANG_FORMAT="${CLANG_FORMAT:-$(default_llvm_tool clang-format)}"
-CLANG_TIDY="${CLANG_TIDY:-$(default_llvm_tool clang-tidy)}"
 CODESCENE="${CODESCENE:-cs}"
 export CS_DISABLE_VERSION_CHECK="${CS_DISABLE_VERSION_CHECK:-1}"
 
@@ -99,7 +108,7 @@ export CS_DISABLE_VERSION_CHECK="${CS_DISABLE_VERSION_CHECK:-1}"
 ##############################
 
 missing=()
-for tool in "$CC" "$CXX" cmake ninja scan-build "$CLANG_FORMAT" "$CLANG_TIDY" "$CODESCENE"; do
+for tool in "$CC" "$CXX" cmake ninja "$SCAN_BUILD" "$CLANG_FORMAT" "$CLANG_TIDY" "$CODESCENE"; do
   command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
 done
 if [ ${#missing[@]} -gt 0 ]; then
@@ -168,7 +177,7 @@ run_clang_tidy() {
 #####################################
 
 run_scan_build() {
-  echo "🔍 Running Clang Static Analysis..."
+  echo "🔍 Running Clang Static Analysis ($SCAN_BUILD)..."
   echo "   CC  -> $CC"
   echo "   CXX -> $CXX"
 
@@ -176,16 +185,16 @@ run_scan_build() {
   # and an explicit compiler bypasses its interceptors so nothing gets analysed.
   rm -rf "$SCAN_BUILD_DIR"
 
-  if ! scan-build \
+  if ! "$SCAN_BUILD" \
     --use-cc="$CC" \
     --use-c++="$CXX" \
-    cmake --preset scan-build; then
+    cmake --preset scan-build "${SCAN_BUILD_CMAKE_ARGS[@]+"${SCAN_BUILD_CMAKE_ARGS[@]}"}"; then
     echo "❌ CMake configure for scan-build failed."
     return 1
   fi
 
   # --status-bugs forces a non-zero exit code if bugs are found
-  if ! scan-build \
+  if ! "$SCAN_BUILD" \
     --use-cc="$CC" \
     --use-c++="$CXX" \
     -enable-checker optin.performance.Padding \

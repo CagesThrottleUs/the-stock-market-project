@@ -10,10 +10,15 @@
       "name": "llvm-debug",
       "displayName": "Debug (Homebrew LLVM)",
       "inherits": "debug",
-      "$comment": "The launcher lines need ccache installed; remove them otherwise.",
+      "$comment": [
+        "CMAKE_PREFIX_PATH tells CMake where this LLVM install lives, so clang-format, clang-tidy and scan-build",
+        "come from the same install as the compiler. It replaces Homebrew's suggested shell exports (see README).",
+        "The launcher lines need ccache installed; remove them otherwise."
+      ],
       "cacheVariables": {
         "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
         "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
+        "CMAKE_PREFIX_PATH": "/opt/homebrew/opt/llvm",
         "CMAKE_C_COMPILER_LAUNCHER": "ccache",
         "CMAKE_CXX_COMPILER_LAUNCHER": "ccache"
       }
@@ -26,7 +31,8 @@
       "binaryDir": "$env{HOME}/.cache/the-stock-market-project/${presetName}",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
-        "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++"
+        "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
+        "CMAKE_PREFIX_PATH": "/opt/homebrew/opt/llvm"
       }
     }
   ],

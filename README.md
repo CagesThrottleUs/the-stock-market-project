@@ -87,11 +87,26 @@ cmake --preset llvm-debug
 cmake --build --preset llvm-debug
 ```
 
-The template shows how to set the compiler, a compiler launcher (ccache) and a custom build directory. CLion and the
-VS Code CMake Tools extension pick up both files automatically.
+The template shows how to set the compiler, the LLVM install location (`CMAKE_PREFIX_PATH`), a compiler launcher (ccache)
+and a custom build directory. CLion and the VS Code CMake Tools extension pick up both files automatically.
 
 A build directory remembers the compiler it was first configured with. After changing compilers, reconfigure from
 scratch with `cmake --preset <name> --fresh`.
+
+#### Homebrew LLVM: skip the shell exports
+
+`brew install llvm` suggests exporting `LDFLAGS`, `CPPFLAGS` and `CMAKE_PREFIX_PATH` in your shell. This project needs
+none of them, so remove them from your shell profile:
+
+- CMake copies `LDFLAGS` (and `CFLAGS`/`CXXFLAGS`) into a build directory's cache on its **first** configure only, so
+  build directories made from different shells silently differ. The configure step warns when this happens.
+- CMake ignores `CPPFLAGS`.
+- The location of LLVM belongs in your user preset as the `CMAKE_PREFIX_PATH` cache variable, as in the template.
+  CMake searches its `bin/` first for `clang-format`, `clang-tidy` and `scan-build`, so the quality gates run from the
+  same install as your compiler.
+
+The build links the system `libc++`. So far nothing needs Homebrew's `libc++` or its `_LIBCPP_DISABLE_AVAILABILITY`
+flag.
 
 > Don't set `CMAKE_C_COMPILER`/`CMAKE_CXX_COMPILER` on the `scan-build` preset or anything it inherits. scan-build
 > selects the compiler through `CC`/`CXX`, and an explicit compiler bypasses it, so the analyzer silently checks
@@ -144,14 +159,16 @@ git checked-push --preset llvm-debug  # use the compilers of one of your presets
 
 The gates build with the compilers CMake resolves for a configure preset: `debug` (CMake's default compiler) unless you
 pass `--preset <name>` or set `PRE_PUSH_PRESET`, usually to one of your user presets. `CC`/`CXX` in the environment
-override the preset. clang-tidy and clang-format are taken from the same LLVM install as the compiler when available.
-Run `scripts/pre-push.sh --help` for all overrides (`CC`, `CXX`, `CLANG_FORMAT`, `CLANG_TIDY`, `CS_DELTA_BASE`).
+override the preset. clang-format, clang-tidy and scan-build are the ones CMake finds for that preset: first in the
+preset's `CMAKE_PREFIX_PATH`, then next to the compiler, then on `PATH`.
+Run `scripts/pre-push.sh --help` for all overrides (`CC`, `CXX`, `CLANG_FORMAT`, `CLANG_TIDY`, `SCAN_BUILD`,
+`CS_DELTA_BASE`).
 
 ## Project layout
 
 ```text
 .
-├── CMakeLists.txt           # Build definition (C++23, warning policy, macOS SDK sanity checks)
+├── CMakeLists.txt           # Build definition (C++23, warning policy, macOS SDK checks, clang tool lookup)
 ├── CMakePresets.json        # Shared build presets (Ninja, build/<preset>)
 ├── CMakeUserPresets.json.example # Template for your git-ignored CMakeUserPresets.json
 ├── main.cpp                 # Entry point (placeholder)

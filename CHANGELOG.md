@@ -3,6 +3,21 @@
 This document is the one that would act as a marker for history of the changes that have been introduced to the project.
 The core goal is communication of this project as a lifetime.
 
+## 2026-11-25
+
+Where LLVM lives on a machine now comes from the user preset's `CMAKE_PREFIX_PATH`, not from shell exports (#9).
+Homebrew's llvm caveats suggest exporting `LDFLAGS`, `CPPFLAGS` and `CMAKE_PREFIX_PATH`. CMake copied the `LDFLAGS` into
+each build directory's cache on its first configure, ignored `CPPFLAGS` altogether, and the project needed none of them.
+The first configure now warns when shell flags are about to be stored in the cache.
+
+`CMakeLists.txt` finds `clang-format`, `clang-tidy` and `scan-build` with `find_program`. It searches
+`CMAKE_PREFIX_PATH` first, then the compiler's directory, then `PATH`. `scripts/pre-push.sh` uses whatever CMake found
+for the chosen preset. Before this, scan-build always came from `PATH` and could be a different LLVM version from the
+compiler.
+
+Found along the way for #11: Homebrew clang can't locate its own `libc++.modules.json`, so `import std` will need
+`CMAKE_CXX_STDLIB_MODULES_JSON`.
+
 ## 2026-11-17
 
 Builds now go through CMake presets (#20). `CMakePresets.json` holds the shared Ninja presets (`debug`, `release`,
