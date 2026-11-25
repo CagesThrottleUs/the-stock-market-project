@@ -25,7 +25,7 @@ CMakeUserPresets.json
 # Ignore the market data directory
 data/
 
-# Ignore logs written by scripts (e.g. scripts/itch_story.py)
+# Ignore logs written by scripts (e.g. scripts/itch_story/itch_story.py)
 logs/
 
 # Ignore __pycache__ from python execution

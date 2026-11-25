@@ -3,12 +3,12 @@
 
 Walks a length-prefixed .bin capture made by scripts/decompress.py and writes one log
 line per message to logs/<capture>.story.log (git-ignored). Only the message types
-written down in scripts/README.md are decoded. The first message of any other type
+written down in scripts/itch_story/README.md are decoded. The first message of any other type
 stops the walk with an error naming the spec section to learn next. The log is
 written either way.
 
-    scripts/itch_story.py                          # data/functional/functional.bin
-    scripts/itch_story.py data/stress/stress.bin
+    scripts/itch_story/itch_story.py                     # data/functional/functional.bin
+    scripts/itch_story/itch_story.py data/stress/stress.bin
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TextIO
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CAPTURE = REPO_ROOT / "data" / "functional" / "functional.bin"
 DEFAULT_LOG_DIR = REPO_ROOT / "logs"
 SPEC = "docs/NQTVITCHSpecification.pdf"
@@ -164,7 +164,7 @@ class Story:
             section = SPEC_SECTIONS.get(header.message_type, "not in the spec")
             raise StoryError(
                 f"message type {header.message_type!r} isn't mapped yet. Read {SPEC} section "
-                + f"'{section}', explain it, then add it to scripts/README.md and this script."
+                + f"'{section}', explain it, then add it to scripts/itch_story/README.md and this script."
             )
         length, teller = self.tellers[header.message_type]
         if len(msg) != length:
