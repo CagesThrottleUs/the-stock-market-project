@@ -5,6 +5,13 @@ The core goal is communication of this project as a lifetime.
 
 ## 2026-11-25
 
+Started learning ITCH by walking the captures instead of reading the spec cover to cover (#24).
+`scripts/itch_story.py` maps the capture with `mmap`, follows the 2-byte length prefixes, and writes one logfmt line per
+message to a git-ignored `logs/<capture>.story.log`. It decodes only the message types written down in
+`scripts/README.md`. Any other type stops the walk with an error naming the spec section to learn next, and the log is
+still written. So far it knows the common header and System Event (`S`). Both captures run `O → S → Q → M → E → C`, and
+the functional capture is the Black Friday early close (`M` at 13:00).
+
 Added Nasdaq's network protocol specifications to `docs/`: MoldUDP64 (`network-moldudp64.pdf`), the UDP transport that
 carries ITCH messages; SoupBinTCP (`network-soupbintcp.pdf`), its TCP counterpart; and the ITCH compression notes
 (`network-itchcompression.pdf`). The `.bin` captures frame messages the same way a MoldUDP64 packet does: a 2-byte

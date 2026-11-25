@@ -175,6 +175,8 @@ Run `scripts/pre-push.sh --help` for all overrides (`CC`, `CXX`, `CLANG_FORMAT`,
 ├── scripts/pre-push.sh      # Local quality gates + git push
 ├── scripts/get_itch_data.py # Download Nasdaq ITCH captures into data/
 ├── scripts/decompress.py    # data/**/*.gz -> sibling .bin (Nasdaq ITCH captures)
+├── scripts/itch_story.py    # Walk a capture and log its story, one message type learnt at a time
+├── scripts/README.md        # What each script does, and what we have learnt about ITCH so far
 ├── .clang-format            # Formatting rules
 ├── .clang-tidy              # Lint rules
 ├── .clangd                  # Language-server flags
